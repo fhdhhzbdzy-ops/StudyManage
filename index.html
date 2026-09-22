@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Study Manage</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header>
+
+    <h1>📚 Study Manage</h1>
+
+    <p>Quản lý việc học của bạn</p>
+
+    <div class="menu">
+
+        <a href="/assignments" class="button">
+            📖 Xem bài tập
+        </a>
+
+        <a href="/exit" class="button">
+            🚪 Thoát
+        </a>
+
+    </div>
+
+</header>
+
+
+<main class="dashboard">
+
+
+    <!-- ==================== HƯỚNG DẪN ==================== -->
+
+    <div class="menu">
+
+        <button onclick="showGuide()">
+            📖 Hướng dẫn sử dụng
+        </button>
+
+    </div>
+
+
+    <section class="card"
+             id="guideBox"
+             style="display: none;">
+
+        <h2>📖 Hướng dẫn sử dụng</h2>
+
+        <p>
+            👋 Chào mừng bạn đến với
+            <strong>Study Manage!</strong>
+        </p>
+
+        <p>
+            ➕ <strong>Thêm nhiệm vụ:</strong>
+            Nhập tên nhiệm vụ, môn học và hạn hoàn thành.
+        </p>
+
+        <p>
+            📖 <strong>Xem bài tập:</strong>
+            Xem danh sách các nhiệm vụ đã thêm.
+        </p>
+
+        <p>
+            ✅ <strong>Hoàn thành:</strong>
+            Đánh dấu nhiệm vụ sau khi đã hoàn thành.
+        </p>
+
+        <p>
+            🗑️ <strong>Xóa:</strong>
+            Xóa nhiệm vụ không còn cần thiết.
+        </p>
+
+        <p>
+            🔔 <strong>Nhắc nhở:</strong>
+            Nhập nội dung và thời gian để tạo lời nhắc.
+        </p>
+
+        <p>
+            📊 <strong>Thống kê:</strong>
+            Theo dõi số nhiệm vụ đã hoàn thành
+            và chưa hoàn thành.
+        </p>
+
+        <p>
+            ⏱️ <strong>Pomodoro:</strong>
+            Chọn thời gian học và bắt đầu bộ đếm giờ.
+        </p>
+
+        <button onclick="hideGuide()">
+            Ẩn hướng dẫn
+        </button>
+
+    </section>
+
+
+    <!-- ==================== NHIỆM VỤ ==================== -->
+
+    <section class="card">
+
+        <h2>📚 Nhiệm vụ học tập</h2>
+
+        <form action="/add_task" method="POST">
+
+            <input
+                type="text"
+                name="task"
+                placeholder="Tên nhiệm vụ..."
+                required
+            >
+
+            <input
+                type="text"
+                name="subject"
+                placeholder="Môn học..."
+                required
+            >
+
+            <input
+                type="date"
+                name="due_date"
+                required
+            >
+
+            <button type="submit">
+                ➕ Thêm nhiệm vụ
+            </button>
+
+        </form>
+
+
+        <ul>
+            {% for task in tasks %}
+
+            <li class="task-item"
+                data-completed="{{ task['completed']|lower }}">
+
+                {% if task["completed"] %}
+
+                    <s>{{ task["name"] }}</s>
+
+                    <br>
+
+                    ☑️ Đã hoàn thành
+
+                {% else %}
+
+                    <strong>{{ task["name"] }}</strong>
+
+                    <br>
+
+                    ⬜ Chưa hoàn thành
+
+                {% endif %}
+
+                <br>
+
+                📖 Môn học:
+                <strong>{{ task["subject"] }}</strong>
+
+                <br>
+
+                📅 Hạn:
+                <strong>{{ task["due_date"] }}</strong>
+
+                <br><br>
+
+
+                <a href="/complete_task/{{ loop.index0 }}">
+
+                    {% if task["completed"] %}
+
+                        ↩️ Đánh dấu chưa hoàn thành
+
+                    {% else %}
+
+                        ✅ Hoàn thành
+
+                    {% endif %}
+
+                </a>
+
+                <br><br>
+
+
+                <a href="/delete_task/{{ loop.index0 }}"
+                   onclick="return confirm('Bạn có chắc muốn xóa nhiệm vụ này không?');">
+
+                    🗑️ Xóa nhiệm vụ
+
+                </a>
+
+            </li>
+
+            {% else %}
+
+            <li>
+                📭 Chưa có nhiệm vụ nào.
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+    </section>
+
+
+    <!-- ==================== NHẮC NHỞ ==================== -->
+
+    <section class="card">
+
+        <h2>🔔 Nhắc nhở</h2>
+
+        <form id="reminderForm">
+
+            <input
+                type="text"
+                id="reminderText"
+                placeholder="Nhập nội dung nhắc nhở..."
+            >
+
+            <input
+                type="datetime-local"
+                id="reminderTime"
+            >
+
+            <button type="submit">
+                🔔 Thêm nhắc nhở
+            </button>
+
+        </form>
+
+
+        <ul id="reminderList">
+
+            <li>
+                Chưa có nhắc nhở.
+            </li>
+
+        </ul>
+
+    </section>
+
+
+    <!-- ==================== THỐNG KÊ ==================== -->
+
+    <section class="card">
+
+        <h2>📊 Thống kê học tập</h2>
+
+        <div class="statistics">
+
+            <p>
+                📚 Tổng số nhiệm vụ:
+                <strong id="totalTasks">0</strong>
+            </p>
+
+            <p>
+                ☑️ Đã hoàn thành:
+                <strong id="completedTasks">0</strong>
+            </p>
+
+            <p>
+                ⏳ Chưa hoàn thành:
+                <strong id="remainingTasks">0</strong>
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================== POMODORO ==================== -->
+
+    <section class="card">
+
+        <h2>⏱️ Pomodoro</h2>
+
+        <div id="timer" class="timer">
+            25:00
+        </div>
+
+
+        <input
+        type="number"
+            id="minutesInput"
+            placeholder="Số phút"
+            min="1"
+        >
+
+
+        <button onclick="setTime()">
+            ⏱️ Đặt thời gian
+        </button>
+
+        <br>
+
+
+        <button onclick="startTimer()">
+            ▶️ Bắt đầu
+        </button>
+
+        <button onclick="pauseTimer()">
+            ⏸️ Tạm dừng
+        </button>
+
+        <button onclick="resetTimer()">
+            🔄 Đặt lại
+        </button>
+
+    </section>
+
+
+</main>
+
+
+<!-- ==================== JAVASCRIPT ==================== -->
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+
+<script>
+
+function showGuide() {
+
+    const guide = document.getElementById("guideBox");
+
+    if (guide) {
+
+        guide.style.display = "block";
+
+    }
+
+}
+
+
+function hideGuide() {
+
+    const guide = document.getElementById("guideBox");
+
+    if (guide) {
+
+        guide.style.display = "none";
+
+    }
+
+}
+
+</script>
+
+
+</body>
+
+</html>
